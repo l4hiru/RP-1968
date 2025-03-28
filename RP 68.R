@@ -75,6 +75,14 @@ data_1968 <- data_1968 %>%
 
 freq(data_1968$Asie)
 
+# Department 
+
+freq(data_1968$D)
+
+data_1968$Department <- as.numeric(data_1968$D)
+
+freq(data_1968$Department)
+
 #Pondération (SOND)
 
 freq(data$SOND)

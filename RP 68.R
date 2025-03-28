@@ -83,6 +83,54 @@ data_1968$Department <- as.numeric(data_1968$D)
 
 freq(data_1968$Department)
 
+# Share 1968 
+
+# First, calculate the numerator (department-level shares)
+
+numerator_1968 <- data_1968 %>%
+  group_by(Department, Europe, South_Europe, East_Europe, 
+           Africa, Maghreb, Asia, North_America, South_America, Oceania,
+           Low_Educ, Mid_Educ, High_Educ) %>%
+  summarise(imm_nei = sum(Immigrant)) %>%
+  ungroup()
+
+# Calculate the denominator (national-level shares)
+
+denominator_1968 <- data_1968 %>%
+  group_by(Europe, South_Europe, East_Europe, 
+           Africa, Maghreb, Asia, North_America, South_America, Oceania,
+           Low_Educ, Mid_Educ, High_Educ) %>%
+  summarise(imm_ne = sum(Immigrant)) %>%
+  ungroup()
+
+# Merge numerator and denominator
+
+share_1968 <- numerator %>%
+  left_join(denominator, by = c("Europe", "South_Europe", "East_Europe", 
+                                "Africa", "Maghreb", "Asia", "North_America", 
+                                "South_America", "Oceania",
+                                "Low_Educ", "Mid_Educ", "High_Educ")) %>%
+  mutate(share = imm_nei / imm_ne)
+
+# Now aggregate across nationality and education groups for each department
+
+share <- share_1968 %>%
+  group_by(Department) %>%
+  summarise(IV = sum(share, na.rm = TRUE))
+
+# Merge back with original data if needed
+
+data_1968 <- data_1968 %>%
+  left_join(share, by = "Department")
+
+
+
+
+
+
+
+### Previous RP82 code
+
 #Pondération (SOND)
 
 freq(data$SOND)

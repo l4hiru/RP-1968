@@ -73,7 +73,7 @@ data_1968 <- data_1968 %>%
     Oceania = ifelse(PN %in% c("86", "87", "89"), 1, 0)  # Oceanian countries
   )
 
-freq(data_1968$Asie)
+freq(data_1968$Asia)
 
 # Department 
 
@@ -125,6 +125,71 @@ data_1968 <- data_1968 %>%
 
 
 
+
+# FB and NFB 1968 fractions 
+
+library(dplyr)
+
+# First, let's create the FB and NFB fractions for 1968
+pop_component <- data_1968 %>%
+  # Create indicators for FB and NFB (assuming "French" and "Naturalized" are binary)
+  mutate(FB = as.numeric(French == 1),
+         NFB = as.numeric(Naturalized == 1)) %>%
+  
+  # Calculate the 1968 shares for each education group at department and national levels
+  group_by(Department, Low_Educ, Mid_Educ, High_Educ) %>%
+  mutate(
+    # Department-level counts in 1968 (numerators)
+    FB_i1968 = sum(FB),
+    NFB_i1968 = sum(NFB)
+  ) %>%
+  group_by(Low_Educ, Mid_Educ, High_Educ) %>%
+  mutate(
+    # National-level counts in 1968 (denominators)
+    FB_1968 = sum(FB),
+    NFB_1968 = sum(NFB)
+  ) %>%
+  ungroup() %>%
+  
+  # Compute the 1968 shares
+  mutate(
+    FB_share_1968 = FB_i1968 / FB_1968,
+    NFB_share_1968 = NFB_i1968 / NFB_1968
+  ) #%>%
+  
+
+
+
+
+
+
+
+
+  # For the current year (t), calculate the national counts by education
+  group_by(Low_Educ, Mid_Educ, High_Educ) %>%
+  mutate(
+    FB_t = sum(FB),
+    NFB_t = sum(NFB)
+  ) %>%
+  ungroup() %>%
+  
+  # Compute the final components
+  mutate(
+    FB_component = FB_share_1968 * FB_t,
+    NFB_component = NFB_share_1968 * NFB_t
+  ) %>%
+  
+  # Aggregate by department
+  group_by(Department) %>%
+  summarise(
+    FB_shift_share = sum(FB_component, na.rm = TRUE),
+    NFB_shift_share = sum(NFB_component, na.rm = TRUE),
+    Total_population = FB_shift_share + NFB_shift_share
+  )
+
+# Merge back with original data if needed
+data_1968 <- data_1968 %>%
+  left_join(pop_component, by = "Department")
 
 
 

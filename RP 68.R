@@ -16,16 +16,28 @@ library(plm)          # For panel data models (if needed)
 
 #RP 1968
 
-data <- read_sas("verdugo_rp68_fdq_14.sas7bdat", col_select = c("IN", "N", "DIP", "D", "REDI")) 
+data <- read_sas("C:/Users/srimling/Documents/Positron/RP/RP 1968/Data/verdugo_rp68_fdq_14.sas7bdat", col_select = c("IN", "N", "DIP", "D", "REDI")) 
 
 #II) Variables ------------------------------------------
 
-# Immigration 
+# Nationality status
 
 data <- data %>%
-  mutate(Immigré = ifelse(IN == 3, 1, 0))
+  mutate(Immigrant = ifelse(IN == 3, 1, 0))
 
-freq(data$Immigré)
+freq(data$Immigrant)
+
+data <- data %>%
+  mutate(French = ifelse(IN == 1, 1, 0))
+
+freq(data$French)
+
+data <- data %>%
+  mutate(Naturalized = ifelse(IN == 2, 1, 0))
+
+freq(data$Naturalized)
+
+
 
 # Diplome 
 

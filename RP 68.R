@@ -16,32 +16,43 @@ library(plm)          # For panel data models (if needed)
 
 #RP 1968
 
-data <- read_sas("C:/Users/srimling/Documents/Positron/RP/RP 1968/Data/verdugo_rp68_fdq_14.sas7bdat", col_select = c("IN", "N", "DIP", "D", "REDI")) 
+data_1968 <- read_sas("C:/Users/srimling/Documents/Positron/RP/RP 1968/Data/verdugo_rp68_fdq_14.sas7bdat", col_select = c("IN", "N", "DIP", "D", "REDI")) 
 
 #II) Variables ------------------------------------------
 
 # Nationality status
 
-data <- data %>%
+data_1968 <- data_1968 %>%
   mutate(Immigrant = ifelse(IN == 3, 1, 0))
 
-freq(data$Immigrant)
+freq(data_1968$Immigrant)
 
-data <- data %>%
+data_1968 <- data_1968 %>%
   mutate(French = ifelse(IN == 1, 1, 0))
 
-freq(data$French)
+freq(data_1968$French)
 
-data <- data %>%
+data_1968 <- data_1968 %>%
   mutate(Naturalized = ifelse(IN == 2, 1, 0))
 
-freq(data$Naturalized)
+freq(data_1968$Naturalized)
 
 
 
-# Diplome 
+# Diploma
 
-freq(data$DIP)
+freq(data_1968$DIP)
+
+data_1968 <- data_1968 %>%
+  mutate(
+    Low_Educ = ifelse(DIP %in% c(00, 10, 11, 20, 21, 22, 23), 1, 0),
+    Mid_Educ = ifelse(DIP %in% c(30, 31, 42, 43, 44), 1, 0),
+    High_Educ = ifelse(DIP %in% c(40, 41, 45, 50), 1, 0)
+  )
+
+freq(data_1968$Low_Educ)
+freq(data_1968$Mid_Educ)
+freq(data_1968$High_Educ)
 
 
 #Pondération (SOND)

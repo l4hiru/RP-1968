@@ -16,7 +16,7 @@ library(plm)          # For panel data models (if needed)
 
 #RP 1968
 
-data_1968 <- read_sas("C:/Users/srimling/Documents/Positron/RP/RP 1968/Data/verdugo_rp68_fdq_14.sas7bdat", col_select = c("IN", "N", "DIP", "D", "REDI")) 
+data_1968 <- read_sas("C:/Users/srimling/Documents/Positron/RP/RP 1968/Data/verdugo_rp68_fdq_14.sas7bdat", col_select = c("IN", "N", "DIP", "D", "PN", "REDI")) 
 
 #II) Variables ------------------------------------------
 
@@ -54,6 +54,26 @@ freq(data_1968$Low_Educ)
 freq(data_1968$Mid_Educ)
 freq(data_1968$High_Educ)
 
+# Nationalities 
+
+freq(data_1968$PN)
+
+unique(data_1968$PN)
+
+data_1968 <- data_1968 %>%
+  mutate(
+    South_Europe = ifelse(PN %in% c("06", "11", "16"), 1, 0),  # Spain, Italy, Portugal
+    Maghreb = ifelse(PN %in% c("30", "31", "45", "52"), 1, 0),     # Algeria, Morocco, Tunisia
+    Europe = ifelse(PN %in% c("01", "02", "03", "05", "07", "08", "09", "10", "12", "13", "14", "18", "19", "20"), 1, 0),  # Western and North European countries
+    East_Europe = ifelse(PN %in% c("04", "15", "17", "21", "22", "29"), 1, 0),  # Bulgaria, Poland, Romania, Czechoslovakia, Yugoslavia
+    Asia = ifelse(PN %in% as.character(71:85), 1, 0),  # Asian countries (Vietnam, Japan, etc.)
+    North_America = ifelse(PN %in% c("60", "61"), 1, 0),  # Canada, United States
+    South_America = ifelse(PN %in% as.character(62:69), 1, 0),  # Argentina, Brazil, Chile, Peru, Venezuela
+    Africa = ifelse(PN %in% as.character(c(32:44, 46:51, 59)), 1, 0),  # Others African countries
+    Oceania = ifelse(PN %in% c("86", "87", "89"), 1, 0)  # Oceanian countries
+  )
+
+freq(data_1968$Asie)
 
 #Pondération (SOND)
 

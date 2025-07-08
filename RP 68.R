@@ -48,14 +48,19 @@ data_1968 <- data_1968 %>%
   mutate(
     South_Europe = ifelse(PN %in% c("06", "11", "16"), 1, 0),  # Spain, Italy, Portugal
     Maghreb = ifelse(PN %in% c("30", "31", "45", "52"), 1, 0),  # Algeria, Morocco, Tunisia
-    Europe = ifelse(PN %in% c("01", "02", "03", "05", "07", "08", "09", "10", "12", "13", "14", "18", "19", "20"), 1, 0),  # Western and North Europe
+    Europe = ifelse(PN %in% c("01", "02", "03", "05", "07", "08", "09", "10", 
+                              "12", "13", "14", "18", "19", "20"), 1, 0),  # Western and North Europe
     East_Europe = ifelse(PN %in% c("04", "15", "17", "21", "22", "29"), 1, 0),  # Eastern Europe
-    Asia = ifelse(PN %in% c(as.character(71:85), "86", "87", "89"), 1, 0),  # Asia + Oceania
-    North_America = ifelse(PN %in% c("60", "61"), 1, 0),  # Canada, United States
-    South_America = ifelse(PN %in% as.character(62:69), 1, 0),  # Latin America
-    Africa = ifelse(PN %in% as.character(c(32:44, 46:51, 59)), 1, 0)  # Other African countries
+    Asia = ifelse(PN %in% c("71", "72", "73", "74", "75", "76", "77", "78", "79", 
+                            "80", "81", "82", "83", "84", "85", "86", "87", "89"), 1, 0),  # Asia + Oceania
+    North_America = ifelse(PN %in% c("60", "61"), 1, 0),  # Canada, USA
+    South_America = ifelse(PN %in% c("62", "63", "64", "65", "66", "67", "68", "69"), 1, 0),  # South America
+    Africa = ifelse(PN %in% c("32", "33", "34", "35", "36", "37", "38", "39", 
+                              "40", "41", "42", "43", "44", "46", "47", "48", 
+                              "49", "50", "51", "59"), 1, 0)  # Other African countries
   )
 
+freq(data_1968$South_Europe)
 
 
 #D) Department 
@@ -64,6 +69,52 @@ data_1968$Departement <- as.factor(data_1968$D)
 
 freq(data_1968$Departement)
 
+
+
+### 
+
+# Étape 1 et 2 : Créer les catégories explicites
+
+data_immigrants <- data_1968 %>%
+  filter(Immigrant == 1) %>%
+  mutate(
+    Educ_Level = case_when(
+      Low_Educ == 1 ~ "Low",
+      Mid_Educ == 1 ~ "Mid",
+      High_Educ == 1 ~ "High",
+    ),
+    Origin = case_when(
+      South_Europe == 1 ~ "South_Europe",
+      Maghreb == 1 ~ "Maghreb",
+      Europe == 1 ~ "Europe",
+      East_Europe == 1 ~ "East_Europe",
+      Asia == 1 ~ "Asia",
+      North_America == 1 ~ "North_America",
+      South_America == 1 ~ "South_America",
+      Africa == 1 ~ "Africa",
+    )
+  )
+
+
+# Étape 3 : Nombre d'immigrés pondéré (×4) par combinaison (d, n, e)
+
+imm_by_dep_origin_educ <- data_immigrants %>%
+  group_by(Departement, Origin, Educ_Level) %>%
+  summarise(N_imm_dept = 4 * n(), .groups = "drop")
+
+sum(imm_by_dep_origin_educ$N_imm_dept)
+
+# Étape 4 : Total national d'immigrés pondéré (×4) par (n, e)
+
+imm_total_origin_educ <- data_immigrants %>%
+  group_by(Origin, Educ_Level) %>%
+  summarise(N_imm_total = 4 * n(), .groups = "drop")
+
+# Étape 5 : Fusion et calcul du ratio
+
+spatial_share_1968 <- imm_by_dep_origin_educ %>%
+  left_join(imm_total_origin_educ, by = c("Origin", "Educ_Level")) %>%
+  mutate(spatial_share = N_imm_dept / N_imm_total)
 
 
 # ----------------------------------------
@@ -96,9 +147,9 @@ freq(data_1968$DIP)
 
 data_1968 <- data_1968 %>%
   mutate(
-    Low_Educ = ifelse(DIP %in% c(00, 10, 11, 20, 21, 22, 23), 1, 0),
-    Mid_Educ = ifelse(DIP %in% c(30, 31, 42, 43, 44), 1, 0),
-    High_Educ = ifelse(DIP %in% c(40, 41, 45, 50), 1, 0)
+    Low_Educ = ifelse(DIP %in% c("00", "10", "11", "20", "21", "22", "23"), 1, 0),
+    Mid_Educ = ifelse(DIP %in% c("30", "31", "42", "43", "44"), 1, 0),
+    High_Educ = ifelse(DIP %in% c("40", "41", "45", "50"), 1, 0)
   )
 
 freq(data_1968$Low_Educ)
@@ -111,17 +162,21 @@ freq(data_1968$PN)
 
 unique(data_1968$PN)
 
+
 data_1968 <- data_1968 %>%
   mutate(
     South_Europe = ifelse(PN %in% c("06", "11", "16"), 1, 0),  # Spain, Italy, Portugal
-    Maghreb = ifelse(PN %in% c("30", "31", "45", "52"), 1, 0),     # Algeria, Morocco, Tunisia
-    Europe = ifelse(PN %in% c("01", "02", "03", "05", "07", "08", "09", "10", "12", "13", "14", "18", "19", "20"), 1, 0),  # Western and North European countries
-    East_Europe = ifelse(PN %in% c("04", "15", "17", "21", "22", "29"), 1, 0),  # Bulgaria, Poland, Romania, Czechoslovakia, Yugoslavia
-    Asia = ifelse(PN %in% as.character(71:85), 1, 0),  # Asian countries (Vietnam, Japan, etc.)
-    North_America = ifelse(PN %in% c("60", "61"), 1, 0),  # Canada, United States
-    South_America = ifelse(PN %in% as.character(62:69), 1, 0),  # Argentina, Brazil, Chile, Peru, Venezuela
-    Africa = ifelse(PN %in% as.character(c(32:44, 46:51, 59)), 1, 0),  # Others African countries
-    Oceania = ifelse(PN %in% c("86", "87", "89"), 1, 0)  # Oceanian countries
+    Maghreb = ifelse(PN %in% c("30", "31", "45", "52"), 1, 0),  # Algeria, Morocco, Tunisia
+    Europe = ifelse(PN %in% c("01", "02", "03", "05", "07", "08", "09", "10", 
+                              "12", "13", "14", "18", "19", "20"), 1, 0),  # Western and North Europe
+    East_Europe = ifelse(PN %in% c("04", "15", "17", "21", "22", "29"), 1, 0),  # Eastern Europe
+    Asia = ifelse(PN %in% c("71", "72", "73", "74", "75", "76", "77", "78", "79", 
+                            "80", "81", "82", "83", "84", "85", "86", "87", "89"), 1, 0),  # Asia + Oceania
+    North_America = ifelse(PN %in% c("60", "61"), 1, 0),  # Canada, USA
+    South_America = ifelse(PN %in% c("62", "63", "64", "65", "66", "67", "68", "69"), 1, 0),  # South America
+    Africa = ifelse(PN %in% c("32", "33", "34", "35", "36", "37", "38", "39", 
+                              "40", "41", "42", "43", "44", "46", "47", "48", 
+                              "49", "50", "51", "59"), 1, 0)  # Other African countries
   )
 
 freq(data_1968$Asia)

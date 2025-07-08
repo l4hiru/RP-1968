@@ -1,4 +1,4 @@
-#RP 1968 (Fichier détail REGION)
+#RP 1968 (INSEE)
 
 #O) Packages 
 
@@ -18,7 +18,58 @@ library(plm)          # For panel data models (if needed)
 
 data_1968 <- read_sas("C:/Users/srimling/Documents/Positron/RP/RP 1968/Data/verdugo_rp68_fdq_14.sas7bdat", col_select = c("IN", "N", "DIP", "D", "PN", "REDI")) 
 
-#II) Variables ------------------------------------------
+#II) Building the shift-share IV (à la Edo et al. 2019)-----------------------------
+
+#A) Immigrant and Natives 
+
+data_1968 <- data_1968 %>%
+  mutate(Immigrant = ifelse(IN == 3, 1, 0))
+
+data_1968 <- data_1968 %>%
+  mutate(French = ifelse(IN == 1, 1, 0))
+
+data_1968 <- data_1968 %>%
+  mutate(Naturalized = ifelse(IN == 2, 1, 0))
+
+#B) Education levels 
+
+data_1968 <- data_1968 %>%
+  mutate(
+    Low_Educ = ifelse(DIP %in% c(00, 10, 11, 20, 21, 22, 23), 1, 0),
+    Mid_Educ = ifelse(DIP %in% c(30, 31, 42, 43, 44), 1, 0),
+    High_Educ = ifelse(DIP %in% c(40, 41, 45, 50), 1, 0)
+  )
+
+#C) Nationalities 
+
+freq(data_1968$PN)
+
+data_1968 <- data_1968 %>%
+  mutate(
+    South_Europe = ifelse(PN %in% c("06", "11", "16"), 1, 0),  # Spain, Italy, Portugal
+    Maghreb = ifelse(PN %in% c("30", "31", "45", "52"), 1, 0),  # Algeria, Morocco, Tunisia
+    Europe = ifelse(PN %in% c("01", "02", "03", "05", "07", "08", "09", "10", "12", "13", "14", "18", "19", "20"), 1, 0),  # Western and North Europe
+    East_Europe = ifelse(PN %in% c("04", "15", "17", "21", "22", "29"), 1, 0),  # Eastern Europe
+    Asia = ifelse(PN %in% c(as.character(71:85), "86", "87", "89"), 1, 0),  # Asia + Oceania
+    North_America = ifelse(PN %in% c("60", "61"), 1, 0),  # Canada, United States
+    South_America = ifelse(PN %in% as.character(62:69), 1, 0),  # Latin America
+    Africa = ifelse(PN %in% as.character(c(32:44, 46:51, 59)), 1, 0)  # Other African countries
+  )
+
+
+
+#D) Department 
+
+data_1968$Departement <- as.factor(data_1968$D)
+
+freq(data_1968$Departement)
+
+
+
+# ----------------------------------------
+
+
+#III) Variables ------------------------------------------
 
 # Nationality status
 

@@ -16,51 +16,52 @@ library(plm)          # For panel data models (if needed)
 
 #RP 1968
 
-data_1968 <- read_sas("C:/Users/srimling/Documents/Positron/RP/RP 1968/Data/verdugo_rp68_fdq_14.sas7bdat", col_select = c("IN", "N", "DIP", "D", "PN", "REDI")) 
+data_1968 <- read_sas("C:/Users/srimling/Documents/Positron/RP/RP 1968/Data/verdugo_rp68_fdq_14.sas7bdat", col_select = c("IN", "N", "DIP", "D", "PN", "TA", "REDI"))
 
-#II) Building the shift-share IV (à la Edo et al. 2019)-----------------------------
+#II) Variables 
 
 #A) Immigrant and Natives 
 
 data_1968 <- data_1968 %>%
-  mutate(Immigrant = ifelse(IN == 3, 1, 0))
-
-data_1968 <- data_1968 %>%
-  mutate(French = ifelse(IN == 1, 1, 0))
-
-data_1968 <- data_1968 %>%
-  mutate(Naturalized = ifelse(IN == 2, 1, 0))
+  mutate(Nationality = case_when(
+    IN == 1 ~ "Native",
+    IN == 2 ~ "Naturalized",
+    IN == 3 ~ "Immigrant",
+  )) %>%
+  mutate(Nationality = factor(Nationality, levels = c("Native", "Naturalized", "Immigrant")))
 
 #B) Education levels 
 
 data_1968 <- data_1968 %>%
-  mutate(
-    Low_Educ = ifelse(DIP %in% c(00, 10, 11, 20, 21, 22, 23), 1, 0),
-    Mid_Educ = ifelse(DIP %in% c(30, 31, 42, 43, 44), 1, 0),
-    High_Educ = ifelse(DIP %in% c(40, 41, 45, 50), 1, 0)
-  )
+  mutate(Diploma = case_when(
+    DIP %in% c("00", "10", "11", "20", "21", "22", "23") ~ "Low",
+    DIP %in% c("30", "31", "42", "43", "44")         ~ "Mid",
+    DIP %in% c("40", "41", "45", "50")             ~ "High",
+  )) %>%
+  mutate(Diploma = factor(Diploma, levels = c("Low", "Mid", "High")))
+
+freq(data_1968$Diploma)
 
 #C) Nationalities 
 
-freq(data_1968$PN)
-
 data_1968 <- data_1968 %>%
-  mutate(
-    South_Europe = ifelse(PN %in% c("06", "11", "16"), 1, 0),  # Spain, Italy, Portugal
-    Maghreb = ifelse(PN %in% c("30", "31", "45", "52"), 1, 0),  # Algeria, Morocco, Tunisia
-    Europe = ifelse(PN %in% c("01", "02", "03", "05", "07", "08", "09", "10", 
-                              "12", "13", "14", "18", "19", "20"), 1, 0),  # Western and North Europe
-    East_Europe = ifelse(PN %in% c("04", "15", "17", "21", "22", "29"), 1, 0),  # Eastern Europe
-    Asia = ifelse(PN %in% c("71", "72", "73", "74", "75", "76", "77", "78", "79", 
-                            "80", "81", "82", "83", "84", "85", "86", "87", "89"), 1, 0),  # Asia + Oceania
-    North_America = ifelse(PN %in% c("60", "61"), 1, 0),  # Canada, USA
-    South_America = ifelse(PN %in% c("62", "63", "64", "65", "66", "67", "68", "69"), 1, 0),  # South America
-    Africa = ifelse(PN %in% c("32", "33", "34", "35", "36", "37", "38", "39", 
-                              "40", "41", "42", "43", "44", "46", "47", "48", 
-                              "49", "50", "51", "59"), 1, 0)  # Other African countries
-  )
+  mutate(Origin = case_when(
+    PN %in% c("06", "11", "16") ~ "South_Europe",      # Spain, Italy, Portugal
+    PN %in% c("30", "31", "45", "52") ~ "Maghreb",     # Algeria, Morocco, Tunisia
+    PN %in% c("01", "02", "03", "05", "07", "08", "09", "10", 
+              "12", "13", "14", "18", "19", "20") ~ "Europe",  # Western/Northern Europe
+    PN %in% c("04", "15", "17", "21", "22", "29") ~ "East_Europe",  # Eastern Europe
+    PN %in% c("71", "72", "73", "74", "75", "76", "77", "78", "79", 
+              "80", "81", "82", "83", "84", "85", "86", "87", "89") ~ "Asia",  # Asia + Oceania
+    PN %in% c("60", "61") ~ "North_America",     # Canada, USA
+    PN %in% c("62", "63", "64", "65", "66", "67", "68", "69") ~ "South_America",  # South America
+    PN %in% c("32", "33", "34", "35", "36", "37", "38", "39", 
+              "40", "41", "42", "43", "44", "46", "47", "48", 
+              "49", "50", "51", "59") ~ "Africa",               # Other Africa
+    TRUE ~ NA_character_
+  ))
 
-freq(data_1968$South_Europe)
+freq(data_1968$Origin)
 
 
 #D) Department 
@@ -70,51 +71,65 @@ data_1968$Departement <- as.factor(data_1968$D)
 freq(data_1968$Departement)
 
 
+#III) Building the shift-share IV (à la Edo et al. 2019) -----------------------------
 
-### 
+# --- 
 
-# Étape 1 et 2 : Créer les catégories explicites
+# Step 1 - Filter only immigrants
 
-data_immigrants <- data_1968 %>%
-  filter(Immigrant == 1) %>%
+immig_data <- data_1968 %>%
+  filter(Nationality == "Immigrant") %>%  # On garde seulement les immigrés
+  filter(!is.na(Diploma), !is.na(Origin), !is.na(Departement)) %>%
   mutate(
-    Educ_Level = case_when(
-      Low_Educ == 1 ~ "Low",
-      Mid_Educ == 1 ~ "Mid",
-      High_Educ == 1 ~ "High",
-    ),
-    Origin = case_when(
-      South_Europe == 1 ~ "South_Europe",
-      Maghreb == 1 ~ "Maghreb",
-      Europe == 1 ~ "Europe",
-      East_Europe == 1 ~ "East_Europe",
-      Asia == 1 ~ "Asia",
-      North_America == 1 ~ "North_America",
-      South_America == 1 ~ "South_America",
-      Africa == 1 ~ "Africa",
-    )
+    Diploma = factor(Diploma, levels = c("Low", "Mid", "High")),
+    Origin_group = Origin  # S'assurer que cette variable est bien formatée
   )
 
 
-# Étape 3 : Nombre d'immigrés pondéré (×4) par combinaison (d, n, e)
+# Step 2 - Count by (Department × Origin × Degree)
 
-imm_by_dep_origin_educ <- data_immigrants %>%
-  group_by(Departement, Origin, Educ_Level) %>%
-  summarise(N_imm_dept = 4 * n(), .groups = "drop")
+grouped_counts <- immig_data %>%
+  group_by(Departement, Origin_group, Diploma) %>%
+  summarise(
+    n_indiv = 4 * n(),  # PONDÉRATION ICI
+    .groups = "drop"
+  )
 
-sum(imm_by_dep_origin_educ$N_imm_dept)
+# Step 3 - Weighted national totals
 
-# Étape 4 : Total national d'immigrés pondéré (×4) par (n, e)
+total_nat_counts <- grouped_counts %>%
+  group_by(Origin_group, Diploma) %>%
+  summarise(
+    total_group = sum(n_indiv),  # Déjà pondéré
+    .groups = "drop"
+  )
 
-imm_total_origin_educ <- data_immigrants %>%
-  group_by(Origin, Educ_Level) %>%
-  summarise(N_imm_total = 4 * n(), .groups = "drop")
+# Step 4 - Shares (unchanged, but based on weighted data)
 
-# Étape 5 : Fusion et calcul du ratio
+shift_share_matrix <- grouped_counts %>%
+  left_join(total_nat_counts, by = c("Origin_group", "Diploma")) %>%
+  mutate(
+    share = n_indiv / total_group
+  )
 
-spatial_share_1968 <- imm_by_dep_origin_educ %>%
-  left_join(imm_total_origin_educ, by = c("Origin", "Educ_Level")) %>%
-  mutate(spatial_share = N_imm_dept / N_imm_total)
+# Step 5 - Rectangularization (no change here)
+
+all_combinations <- expand_grid(
+  Departement = unique(data_1968$Departement),
+  Origin_group = unique(immig_data$Origin_group),
+  Diploma = unique(immig_data$Diploma)
+)
+
+shift_share_rect <- all_combinations %>%
+  left_join(shift_share_matrix, by = c("Departement", "Origin_group", "Diploma")) %>%
+  mutate(
+    share = replace_na(share, 0),
+    n_indiv = replace_na(n_indiv, 0),
+    total_group = replace_na(total_group, 0)
+  )
+
+
+
 
 
 # ----------------------------------------

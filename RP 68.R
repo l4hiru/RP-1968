@@ -32,10 +32,13 @@ data_1968 <- data_1968 %>%
 
 #B) Education levels 
 
+freq(data_1968$DIP)
+
 data_1968 <- data_1968 %>%
   mutate(Diploma = case_when(
-    DIP %in% c("00", "10", "11", "20", "21", "22", "23") ~ "Low",
-    DIP %in% c("30", "31", "42", "43", "44")         ~ "Mid",
+    DIP == "00" ~ NA_character_,  
+    DIP %in% c("10", "11", "20", "21", "22", "23") ~ "Low",
+    DIP %in% c("30", "31", "42", "43", "44")       ~ "Mid",
     DIP %in% c("40", "41", "45", "50")             ~ "High",
   )) %>%
   mutate(Diploma = factor(Diploma, levels = c("Low", "Mid", "High")))
@@ -77,7 +80,7 @@ freq(data_1968$Departement)
 
 # Step 1 - Filter only immigrants
 
-immig_data <- data_1968 %>%
+immi_data <- data_1968 %>%
   filter(Nationality == "Immigrant") %>%  # On garde seulement les immigrés
   filter(!is.na(Diploma), !is.na(Origin), !is.na(Departement)) %>%
   mutate(
@@ -85,51 +88,126 @@ immig_data <- data_1968 %>%
     Origin_group = Origin  # S'assurer que cette variable est bien formatée
   )
 
+native_data <- data_1968 %>%
+  filter(Nationality == "Native") %>%
+  filter(!is.na(Diploma), !is.na(Departement)) %>%
+  mutate(Diploma = factor(Diploma, levels = c("Low", "Mid", "High")))
+
+naturalized_data <- data_1968 %>%
+  filter(Nationality == "Naturalized") %>%
+  filter(!is.na(Diploma), !is.na(Departement)) %>%
+  mutate(Diploma = factor(Diploma, levels = c("Low", "Mid", "High")))
+
 
 # Step 2 - Count by (Department × Origin × Degree)
 
-grouped_counts <- immig_data %>%
+immi_counts <- immi_data %>%
   group_by(Departement, Origin_group, Diploma) %>%
   summarise(
     n_indiv = 4 * n(),  # PONDÉRATION ICI
     .groups = "drop"
   )
 
+native_counts <- native_data %>%
+  group_by(Departement, Diploma) %>%
+  summarise(n_indiv = 4 * n(), .groups = "drop")
+
+naturalized_counts <- naturalized_data %>%
+  group_by(Departement, Diploma) %>%
+  summarise(n_indiv = 4 * n(), .groups = "drop")
+
+
 # Step 3 - Weighted national totals
 
-total_nat_counts <- grouped_counts %>%
+immi_totals <- immi_counts %>%
   group_by(Origin_group, Diploma) %>%
   summarise(
     total_group = sum(n_indiv),  # Déjà pondéré
     .groups = "drop"
   )
 
+native_totals <- native_counts %>%
+  group_by(Diploma) %>%
+  summarise(total_group = sum(n_indiv), .groups = "drop")
+
+naturalized_totals <- naturalized_counts %>%
+  group_by(Diploma) %>%
+  summarise(total_group = sum(n_indiv), .groups = "drop")
+
 # Step 4 - Shares (unchanged, but based on weighted data)
 
-shift_share_matrix <- grouped_counts %>%
-  left_join(total_nat_counts, by = c("Origin_group", "Diploma")) %>%
+immi_shares <- immi_counts %>%
+  left_join(immi_totals, by = c("Origin_group", "Diploma")) %>%
   mutate(
     share = n_indiv / total_group
   )
 
+native_shares <- native_counts %>%
+  left_join(native_totals, by = "Diploma") %>%
+  mutate(
+    share = n_indiv / total_group,
+    Nationality = "Native"
+  )
+
+naturalized_shares <- naturalized_counts %>%
+  left_join(naturalized_totals, by = "Diploma") %>%
+  mutate(
+    share = n_indiv / total_group,
+    Nationality = "Naturalized"
+  )
+
 # Step 5 - Rectangularization (no change here)
 
-all_combinations <- expand_grid(
+all_immi_combos <- expand_grid(
   Departement = unique(data_1968$Departement),
-  Origin_group = unique(immig_data$Origin_group),
-  Diploma = unique(immig_data$Diploma)
+  Origin_group = unique(immi_data$Origin_group),
+  Diploma = unique(immi_data$Diploma)
 )
 
-shift_share_rect <- all_combinations %>%
-  left_join(shift_share_matrix, by = c("Departement", "Origin_group", "Diploma")) %>%
+all_native_combos <- expand_grid(
+  Departement = unique(data_1968$Departement),
+  Diploma = unique(native_data$Diploma)
+)
+
+all_naturalized_combos <- expand_grid(
+  Departement = unique(data_1968$Departement),
+  Diploma = unique(naturalized_data$Diploma)
+)
+
+immi_share_rect <- all_immi_combos %>%
+  left_join(immi_shares, by = c("Departement", "Origin_group", "Diploma")) %>%
   mutate(
     share = replace_na(share, 0),
     n_indiv = replace_na(n_indiv, 0),
     total_group = replace_na(total_group, 0)
   )
 
+native_share_rect <- all_native_combos %>%
+  left_join(native_shares, by = c("Departement", "Diploma")) %>%
+  mutate(
+    share = replace_na(share, 0),
+    n_indiv = replace_na(n_indiv, 0),
+    total_group = replace_na(total_group, 0),
+    Nationality = "Native"
+  )
+
+naturalized_share_rect <- all_naturalized_combos %>%
+  left_join(naturalized_shares, by = c("Departement", "Diploma")) %>%
+  mutate(
+    share = replace_na(share, 0),
+    n_indiv = replace_na(n_indiv, 0),
+    total_group = replace_na(total_group, 0),
+    Nationality = "Naturalized"
+  )
 
 
+# Combine it 
+
+share_1968 <- bind_rows(
+  immi_share_rect %>% mutate(Nationality = "Immigrant"),
+  native_share_rect,
+  naturalized_share_rect
+)
 
 
 # ----------------------------------------

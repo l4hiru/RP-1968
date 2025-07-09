@@ -205,10 +205,13 @@ naturalized_share_rect <- all_naturalized_combos %>%
 
 share_1968 <- bind_rows(
   immi_share_rect %>% mutate(Nationality = "Immigrant"),
-  native_share_rect,
-  naturalized_share_rect
+  native_share_rect %>% mutate(Origin_group = "French"),
+  naturalized_share_rect %>% mutate(Origin_group = "Naturalized")
 )
 
+sum(share_1968$n_indiv)
+
+write_parquet(share_1968, "share_1968.parquet")
 
 # ----------------------------------------
 

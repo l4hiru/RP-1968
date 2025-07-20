@@ -47,20 +47,22 @@ freq(data_1968$Diploma)
 
 #C) Nationalities 
 
+freq(data_1968$N)
+
 data_1968 <- data_1968 %>%
   mutate(Origin = case_when(
-    PN %in% c("06", "11", "16") ~ "South_Europe",      # Spain, Italy, Portugal
-    PN %in% c("30", "31", "45", "52") ~ "Maghreb",     # Algeria, Morocco, Tunisia
-    PN %in% c("01", "02", "03", "05", "07", "08", "09", "10", 
-              "12", "13", "14", "18", "19", "20") ~ "Europe",  # Western/Northern Europe
-    PN %in% c("04", "15", "17", "21", "22", "29") ~ "East_Europe",  # Eastern Europe
-    PN %in% c("71", "72", "73", "74", "75", "76", "77", "78", "79", 
-              "80", "81", "82", "83", "84", "85", "86", "87", "89") ~ "Asia",  # Asia + Oceania
-    PN %in% c("60", "61") ~ "North_America",     # Canada, USA
-    PN %in% c("62", "63", "64", "65", "66", "67", "68", "69") ~ "South_America",  # South America
-    PN %in% c("32", "33", "34", "35", "36", "37", "38", "39", 
+    N %in% c("06", "11", "16") ~ "South_Europe",      # Spain, Italy, Portugal
+    N %in% c("30", "45", "52") ~ "Maghreb",     # Algeria (exlucing pieds-noirs), Morocco, Tunisia
+    N %in% c("01", "02", "03", "05", "07", "08", "09", "10", 
+              "12", "13", "14", "18", "19", "20",
+              "04", "15", "17", "21", "22", "29") ~ "Europe",  # Western/Northern + Eastern Europe
+    N %in% c("71", "72", "73", "74", "75", "76", "77", "78", "79", "81", "82", "83", "84", "85", "86", "87", "89") ~ "Asia",  # Asia + Oceania
+    N %in% c("60", "61", 
+              "62", "63", "64", "65", "66", "67", "68", "69") ~ "America",  # North + South America
+    N %in% c("32", "33", "34", "35", "36", "37", "38", "39", 
               "40", "41", "42", "43", "44", "46", "47", "48", 
-              "49", "50", "51", "59") ~ "Africa",               # Other Africa
+              "49", "50", "51", "59") ~ "Africa",  # Other Africa
+    N %in% c("80") ~ "Turkey",
     TRUE ~ NA_character_
   ))
 

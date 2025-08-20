@@ -51,18 +51,16 @@ freq(data_1968$N)
 
 data_1968 <- data_1968 %>%
   mutate(Origin = case_when(
-    N %in% c("06", "11", "16") ~ "South_Europe",      # Spain, Italy, Portugal
     N %in% c("30", "45", "52") ~ "Maghreb",     # Algeria (exlucing pieds-noirs), Morocco, Tunisia
     N %in% c("01", "02", "03", "05", "07", "08", "09", "10", 
               "12", "13", "14", "18", "19", "20",
-              "04", "15", "17", "21", "22", "29") ~ "Europe",  # Western/Northern + Eastern Europe
-    N %in% c("71", "72", "73", "74", "75", "76", "77", "78", "79", "81", "82", "83", "84", "85", "86", "87", "89") ~ "Asia",  # Asia + Oceania
+              "04", "15", "17", "21", "22", "29", "06", "11", "16") ~ "Europe",  # Western/Northern + Eastern Europe + South Europe
+    N %in% c("71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "89") ~ "Asia",  # Asia + Oceania
     N %in% c("60", "61", 
               "62", "63", "64", "65", "66", "67", "68", "69") ~ "America",  # North + South America
     N %in% c("32", "33", "34", "35", "36", "37", "38", "39", 
               "40", "41", "42", "43", "44", "46", "47", "48", 
               "49", "50", "51", "59") ~ "Africa",  # Other Africa
-    N %in% c("80") ~ "Turkey",
     TRUE ~ NA_character_
   ))
 
@@ -309,12 +307,6 @@ denominator_1968 <- data_1968 %>%
 
 # Merge numerator and denominator
 
-share_1968 <- numerator %>%
-  left_join(denominator, by = c("Europe", "South_Europe", "East_Europe", 
-                                "Africa", "Maghreb", "Asia", "North_America", 
-                                "South_America", "Oceania",
-                                "Low_Educ", "Mid_Educ", "High_Educ")) %>%
-  mutate(share = imm_nei / imm_ne)
 
 # Now aggregate across nationality and education groups for each department
 

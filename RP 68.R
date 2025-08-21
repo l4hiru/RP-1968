@@ -214,6 +214,19 @@ share_1968 <- bind_rows(
 sum(share_1968$n_indiv)
 
 write_parquet(share_1968, "share_1968.parquet")
+write_parquet(immi_share_rect, "share_1968_immi.parquet")
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ----------------------------------------
 

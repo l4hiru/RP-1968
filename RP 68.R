@@ -54,7 +54,8 @@ data_1968 <- data_1968 %>%
     N %in% c("30", "45", "52") ~ "Maghreb",     # Algeria (exlucing pieds-noirs), Morocco, Tunisia
     N %in% c("01", "02", "03", "05", "07", "08", "09", "10", 
               "12", "13", "14", "18", "19", "20",
-              "04", "15", "17", "21", "22", "29", "06", "11", "16", "31") ~ "Europe",  # Western/Northern + Eastern Europe + South Europe + pieds-noirs
+              "04", "15", "17", "21", "22", "29", "31") ~ "Europe",  # Western/Northern + Eastern Europe + pieds-noirs
+    N %in% c("06", "11", "16") ~ "South Europe", # South Europe        
     N %in% c("71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "89") ~ "Asia",  # Asia + Oceania
     N %in% c("60", "61", 
               "62", "63", "64", "65", "66", "67", "68", "69") ~ "America",  # North + South America

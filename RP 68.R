@@ -218,11 +218,30 @@ write_parquet(share_1968, "share_1968.parquet")
 write_parquet(immi_share_rect, "share_1968_immi.parquet")
 
 
+# V) Construction of matrix W (ShiftShareSE)
+
+immi_share_rect <- immi_share_rect %>%
+  arrange(Departement)  # Ordonne par code département croissant
+
+W_matrix <- immi_share_rect %>%
+  select(Departement, Origin_group, Diploma, share) %>%
+  pivot_wider(
+    id_cols = Departement,
+    names_from = c(Origin_group, Diploma),  # Crée des colonnes "Origin_Diploma"
+    values_from = share,
+    values_fill = 0  # Met 0 si combinaison manquante
+  )
+
+freq(W_matrix$Departement)
 
 
+departements <- W_matrix$Departement
+W_matrix <- as.matrix(W_matrix[, -1])  # Enlève la colonne Departement
+rownames(W_matrix) <- departements
 
+W_matrix <- as.data.frame(W_matrix)
 
-
+write_parquet(W_matrix, "W_matrix.parquet") # 95 departement avec 18 couples origine-dipp
 
 
 
